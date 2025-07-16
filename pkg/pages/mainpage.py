@@ -44,5 +44,6 @@ class MainPage(ttk.Window):
 if __name__ == "__main__":
     main_page = MainPage()
     main_page.state("zoomed")
+    # main_page.resizable(False,False)
     main_page.mainloop()
     
