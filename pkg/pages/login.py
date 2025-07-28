@@ -5,32 +5,25 @@ from ttkbootstrap.constants import *
 import json
 import os
 from pkg.common.encryption import Encryption
-from pkg.pages.mainpage import MainApp
+from pkg.pages.mainpage import MainPage
 import sys
 
-class LoginApp:
+class LoginApp(ttk.Frame):
     
     # 创建窗口（此时主题已预加载）
-    def __init__(self):
-        self.root = ttk.Window(
-            themename="minty",
-            title="系统登录",
-            size=(400, 550),
-            resizable=(False, False)
-        )
-        self.root.withdraw()  # 先隐藏
+    def __init__(self,parent,app):
+        super().__init__(parent)
+        self.parent = parent  # 主窗口
+        self.app = app        # 应用实例
+        self.pack(fill=BOTH,expand=YES,padx=10,pady=10)
         
         # 创建UI
         self.create_widgets()
         
-        # 最终显示
-        self.root.position_center()
-        self.root.deiconify()
-        
     def create_widgets(self):
         """创建登录界面组件"""
         # 顶部LOGO区域
-        logo_frame = ttk.Frame(self.root)
+        logo_frame = ttk.Frame(self)
         logo_frame.pack(pady=40)
         
         # 这里可以替换为你的LOGO图片
@@ -49,7 +42,7 @@ class LoginApp:
         ).pack(pady=10)
         
         # 登录表单区域
-        form_frame = ttk.Frame(self.root)
+        form_frame = ttk.Frame(self)
         form_frame.pack(padx=40, pady=10, fill=tk.X)
         
         # 用户名输入
@@ -74,7 +67,7 @@ class LoginApp:
         
         # 登录按钮
         login_btn = ttk.Button(
-            self.root,
+            self,
             text="登 录",
             command=self.on_login,
             bootstyle=(OUTLINE, SUCCESS),
@@ -83,7 +76,7 @@ class LoginApp:
         login_btn.pack(pady=5)
 
         ttk.Button(
-            self.root,
+            self,
             text="快速登录",
             bootstyle=(LINK, INVERSE),
             command=self.show_quick_login_dialog
@@ -91,14 +84,14 @@ class LoginApp:
         
         # 底部版权信息
         ttk.Label(
-            self.root, 
+            self, 
             text="© 2025 世纪众云 | v1.0.0",
             font=("Helvetica", 8),
             bootstyle="secondary"
         ).pack(side=tk.BOTTOM, pady=10)
 
         # 绑定回车键登录
-        self.root.bind("<Return>", lambda e: self.on_login())
+        self.bind("<Return>", lambda e: self.on_login())
     
     def on_login(self):
         """登录按钮事件处理"""
@@ -120,19 +113,15 @@ class LoginApp:
     
     def load_mainapp_page(self, username, password):
         # 隐藏登录窗口而不是销毁
-        self.root.withdraw()
-        
+        self.destroy()
         # # 创建主界面
-        main_window = ttk.Window(themename="simplex")
-        main_window.title(f"管理后台 - {username}")
-        main_window.state("zoomed")
-        self.main_app = MainApp(main_window, username)
-        self.main_app.pack(fill='both', expand=True)
-        
-
+        # main_window = ttk.Window(themename="simplex")
+        # main_window.title(f"管理后台 - {username}")
+        # main_window.state("zoomed")
+        MainPage(self.parent,self.app,username=username)
+        # self.main_app.pack(fill='both', expand=True)
         # 设置主窗口关闭时的回调
-        main_window.protocol("WM_DELETE_WINDOW", self.on_main_window_close)
-        main_window.mainloop()
+        # main_window.protocol("WM_DELETE_WINDOW", self.on_main_window_close)
 
     def on_main_window_close(self):
         """主窗口关闭时的处理"""
@@ -199,16 +188,17 @@ class LoginApp:
             return
         
         # 创建选择对话框
-        dialog = ttk.Toplevel(self.root)
+        dialog = ttk.Toplevel(self)
         dialog.title("选择用户")
-        dialog.transient(self.root)  # 设为父窗口的子窗口
+        dialog.transient(self)  # 设为父窗口的子窗口
         dialog.grab_set()  # 模态对话框
         
         # 设置对话框大小和位置
         dialog_width = 300
         dialog_height = 300
-        x = self.root.winfo_x() + (self.root.winfo_width() - dialog_width) // 2
-        y = self.root.winfo_y() + (self.root.winfo_height() - dialog_height) // 2
+         # 居中计算
+        x = (self.winfo_screenwidth() // 2) - (dialog_width // 2)
+        y = (self.winfo_screenheight() // 2) - (dialog_height // 2)
         dialog.geometry(f"{dialog_width}x{dialog_height}+{x}+{y}")
         
         # 用户列表框架
@@ -296,6 +286,7 @@ class LoginApp:
             if username and password:
                 messagebox.showinfo("成功", f"欢迎回来，{username}！")
                 self.load_mainapp_page(username,password)
+                dialog.destroy()
             else:
                 messagebox.showerror("失败", "用户名或密码错误")
                 self.password_entry.delete(0, tk.END)
@@ -313,6 +304,3 @@ class LoginApp:
         except:
             return []
         return []
-        
-    def run(self):
-        self.root.mainloop()

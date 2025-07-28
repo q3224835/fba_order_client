@@ -25,6 +25,7 @@ class TableView(ttk.Frame):
         self.update_callback = update_callback
         self.delete_callback = delete_callback
         self.detail_callback = detail_callback
+        self.checkbox_vars = {}
         # 初始化表格
         self.table = Tableview(
             master     = self,
@@ -57,13 +58,20 @@ class TableView(ttk.Frame):
         self.rowdata = rowdata
         self.table.build_table_data(self.coldata, self.rowdata)
         self._set_alignment()
-        # self.add_checkboxes_to_first_column()
 
 
     def append_row(self, row_data):
         """追加一行数据"""
         self.table.insert_row(index='end', values=row_data)
         self.table.reset_table()
+
+    def get_selected_rows(self):
+        """获取所有选中的行"""
+        selected = []
+        for key, var in self.checkbox_vars.items():
+            if var.get():
+                selected.append(key)
+        return selected
 
     def get_treeview(self,widget):
         """递归查找Treeview组件"""

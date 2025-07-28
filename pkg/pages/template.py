@@ -5,7 +5,7 @@ from ttkbootstrap.constants import *
 from pkg.pages.widgets.table_view import TableView
 import time
 
-class OrderList(ttk.Frame):
+class FileList(ttk.Frame):
     def __init__(self, master, colors):
         super().__init__(master)
         self.load_data()
@@ -31,7 +31,7 @@ class OrderList(ttk.Frame):
             self.status_menu.add_radiobutton(label=t, value=i,command=lambda text=t,value=i: self.enforce_exclusive(text=text,value=value))
 
         # 查询区
-        ttk.Label(search_btn_frame, text="状态筛选").pack(side=LEFT,padx=10)
+        ttk.Label(search_btn_frame, text="状态筛选").pack(side=LEFT,padx=10,pady=10)
         self.status_menu_btn = ttk.Menubutton(
             master=search_btn_frame,
             text="全部",
@@ -39,7 +39,7 @@ class OrderList(ttk.Frame):
             menu=self.status_menu,
             width=10
         )
-        self.status_menu_btn.pack(side=LEFT, pady=(0,10))
+        self.status_menu_btn.pack(side=LEFT, pady=10)
 
         ttk.Label(search_btn_frame, text="订单号").pack(side=LEFT,padx=10)
         s_orderno = ttk.Entry(search_btn_frame,width=20)
