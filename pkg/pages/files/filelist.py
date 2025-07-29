@@ -7,6 +7,7 @@ from ttkbootstrap.constants import *
 from pkg.pages.widgets.table_view import TableView
 import time
 from pkg.common import http_get,http_post,http_upload,files_url
+import threading
 
 col_data = [
             {"text": "id", "stretch": True, "anchor": "w"},
@@ -216,26 +217,51 @@ class FileList(ttk.Frame):
         self.status_menu_btn.configure(text=text)
 
     def load_data(self):
-        """加载初始数据"""
-        self.row_data = []
-        params = {
-            "page": 1,
-            "page_size": 50,
-            "file_type": "",
-            "file_name": ""
-        }
-        response  = http_get(url=f"{files_url}/list", params=params,timeout=30)
-        if response.get("code") == 200:
-            file_list = response.get('data', {}).get('fileList', [])
-            for item in file_list:
-                self.row_data.append((
-                    item.get("id"),
-                    item.get("fileName"),
-                    item.get("filePath"),
-                    item.get("fileSize"),
-                    item.get("fileType"),
-                    item.get("fileKey"),
-                    item.get("createdUserName"),
-                    item.get("createdTime"),
-                ))
-        self.table.refresh_data(self.row_data)
+        """加载数据 - 优化为异步加载"""
+        # 显示加载状态
+        self.table.show_loading()
+        
+        # 创建后台线程执行耗时操作
+        threading.Thread(
+            target=self.load_data_background,
+            daemon=True  # 守护线程，主程序退出时自动结束
+        ).start()
+        # self.table.hide_loading()
+
+    # 请求接口获取数据
+    def load_data_background(self):
+        """在后台线程中执行实际的数据加载"""
+        try:
+            # 耗时的网络请求
+            params = {
+                "page": 1,
+                "page_size": 50,
+                "file_type": "",
+                "file_name": ""
+            }
+            response = http_get(url=f"{files_url}/list", params=params, timeout=30)
+            
+            self.row_data = []
+            if response.get("code") == 200:
+                file_list = response.get('data', {}).get('fileList', [])
+                for item in file_list:
+                    self.row_data.append((
+                        item.get("id"),
+                        item.get("fileName"),
+                        item.get("filePath"),
+                        item.get("fileSize"),
+                        item.get("fileType"),
+                        item.get("fileKey"),
+                        item.get("createdUserName"),
+                        item.get("createdTime"),
+                    ))
+            
+            # 通过主线程更新UI（Tkinter要求UI操作必须在主线程）
+            self.table.refresh_data(self.row_data)
+            self.table.hide_loading()
+            
+        except Exception as e:
+            # 异常处理，在主线程显示错误信息
+            self.after(0, lambda: print("加载失败", f"数据加载出错: {str(e)}"))
+            # 确保隐藏加载状态
+            self.after(0, self.table.hide_loading)

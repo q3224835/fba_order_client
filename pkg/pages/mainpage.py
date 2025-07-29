@@ -11,7 +11,12 @@ class MainPage(ttk.Frame):
     def __init__(self,parent,app,username):
         super().__init__(parent)
         self.parent =parent
-        self.parent.title(f"FBA管理后台    {username}     {time.localtime().tm_year}年{time.localtime().tm_mon}月{time.localtime().tm_mday}日 {time.localtime().tm_hour}时{time.localtime().tm_min}分{time.localtime().tm_sec}秒")
+        current_time = time.localtime()
+        self.parent.title(
+            f"FBA管理后台    {username}     "
+            f"{current_time.tm_year}年{current_time.tm_mon}月{current_time.tm_mday}日 "
+            f"{current_time.tm_hour}时{current_time.tm_min}分{current_time.tm_sec}秒"
+        )
         self.parent.state("zoomed")
         self.parent.resizable(True, True)
         self.app = app
@@ -38,13 +43,12 @@ class MainPage(ttk.Frame):
         )))
 
     def create_widgets(self):
-        self.notebook = ttk.Notebook(self)
+        self.notebook = ClosableNotebook(self)
         # ToolTip(nb, text="笔记本组件", bootstyle=(PRIMARY, INVERSE))
         self.notebook.pack(side=LEFT, padx=0, pady=0, expand=YES, fill=BOTH)
-        nb_text = (
-            "欢迎页欢迎页欢迎页欢迎页欢迎页欢迎页欢迎页欢迎页欢迎页欢迎页欢迎页欢迎页欢迎页欢迎页"
-        )
-        self.notebook.add(ttk.Label(self.notebook, text=nb_text), text="主页", sticky=NW)
+        nb_text = "欢迎页欢迎页欢迎页欢迎页欢迎页欢迎页欢迎页欢迎页欢迎页欢迎页欢迎页欢迎页欢迎页欢迎页"
+        home_page = ttk.Label(self.notebook, text=nb_text)
+        self.notebook.add_tab(home_page, "主页", closable=False)
     
     def new_tabs_page(self,tab_name,page):
         for i in self.notebook.tabs(): 
@@ -53,7 +57,85 @@ class MainPage(ttk.Frame):
                 self.notebook.select(i)
                 return
         
-        print("new page")
-        self.notebook.add(page, text = tab_name)
-        self.notebook.select(page)
+        self.notebook.add_tab(page, title=tab_name)
+        self.notebook.select(page)  
+
+class ClosableNotebook(ttk.Notebook):
+    """带关闭按钮的Notebook组件"""
+    def __init__(self, master=None, **kwargs):
+        super().__init__(master,** kwargs)
+        self.closable_tabs = set()  # 存储可关闭标签页的标识
+        self.bind("<<NotebookTabChanged>>", self._update_tab_buttons)
+        # 绑定右键事件，注意这里使用一个通用绑定而非按索引绑定
+        self.bind("<Button-3>", self._show_close_menu)
+        
+    def add_tab(self, frame, title, closable=True):
+        """添加新标签页"""
+        self.add(frame, text=title)
+        tab_index = self.index("end") - 1
+        tab_id = self.tabs()[tab_index]
+        
+        # 记录可关闭的标签页
+        if closable:
+            self.closable_tabs.add(tab_id)
+        
+        return frame
     
+    def close_tab(self, frame=None, index=None):
+        """关闭指定标签页"""
+        if self.index("end") <= 1:
+            return
+            
+        if frame:
+            index = self.index(frame)
+        elif index is None:
+            index = self.index("current")
+            
+        tab_id = self.tabs()[index]
+        # 只允许关闭标记为可关闭的标签页
+        if tab_id in self.closable_tabs:
+            frame_to_remove = self.nametowidget(tab_id)
+            self.forget(index)
+            frame_to_remove.destroy()
+            self.closable_tabs.discard(tab_id)  # 从集合中移除
+    
+    def _show_close_menu(self, event):
+        """显示关闭右键菜单，仅对可关闭标签有效"""
+        try:
+            index = self.index(f"@{event.x},{event.y}")
+            tab_id = self.tabs()[index]
+            
+            # 检查当前标签是否可关闭
+            if tab_id in self.closable_tabs:
+                close_menu = ttk.Menu(self, tearoff=0)
+                close_menu.add_command(
+                    label="上一页",
+                    command=lambda: self.prev_page()
+                )
+                close_menu.add_command(
+                    label="下一页",
+                    command=lambda : self.next_page()
+                )
+                close_menu.add_command(
+                    label="关闭",
+                    command=lambda i=index: self.close_tab(index=i)
+                )
+                close_menu.post(event.x_root, event.y_root)
+        except:
+            return
+    
+    def prev_page(self):
+        """上一页功能"""
+        current_index = self.index("current")
+        if current_index > 0:
+            self.select(current_index - 1)
+
+    def next_page(self):
+        """下一页功能"""
+        current_index = self.index("current")
+        if current_index < self.index("end") - 1:
+            self.select(current_index + 1)
+
+    def _update_tab_buttons(self, event=None):
+        """更新标签页按钮状态"""
+        pass

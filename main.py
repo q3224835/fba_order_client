@@ -3,7 +3,7 @@ import ttkbootstrap as ttk
 
 class Main(ttk.Window):
     def __init__(self):
-        super().__init__(themename="minty")
+        super().__init__(themename="litera")
         self.title("用户登录")
         # self.geometry("400x550")
         self.window_width = 400  # 窗口期望的宽度
